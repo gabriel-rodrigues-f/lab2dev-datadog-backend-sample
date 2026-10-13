@@ -73,6 +73,18 @@ scripts/traffic.sh http://localhost:4004 1
 - **Buildpack de terceiro.** A SAP não dá suporte a ele; o zip é baixado do GitHub no staging (versão fixa no
   manifest, 4.48.1). Para cliente sem saída para o GitHub: `cf create-buildpack` com o zip, se o cliente permitir.
 - **Memória.** O agente divide o container com o app; 512 MB folgam para este sample.
+- **Ruby 3.0 do `cflinuxfs4` (BTP).** Os scripts Ruby do buildpack não batem com ele em dois pontos:
+  `DD_SPARSE_APP_LOGS` troca o `nc` pelo `scripts/nc.rb`, que quebra (`must be called with a block
+  (ThreadError)`) e **nenhuma linha chega ao agente**: não use. E o `update_datadog_config.rb` falha com
+  `unknown keyword: :aliases` (só as tags do `datadog.yaml`; os logs não dependem dele).
+- **Como ver que funciona.** `SUPPRESS_DD_AGENT_OUTPUT: false` põe a saída do agente no `cf logs`: procure
+  `HTTP connectivity successful`, `logs-agent started`, `Starting TCP forwarder on port 10514` e
+  `Start tailing stream from 127.0.0.1`. Um `Resetting buildpack log redirection` logo no start é normal (o
+  agente ainda não escutava); se ele se repetir, a ponte stdout → agente está caindo.
+- **Stack.** O BTP marcou o `cflinuxfs4` como deprecated (novos pushes até 12/04/2027). O `cflinuxfs5` ainda
+  não foi testado com este buildpack.
+- **Cabeçalhos nos logs.** O formatter JSON do CAP grava todos os cabeçalhos do request, inclusive
+  `x_forwarded_for` e `x_cf_true_client_ip` (IP de quem chamou). Para tirar, use `cds.log.mask_headers`.
 - **Tags.** `DD_ENV`/`DD_SERVICE`/`DD_VERSION` com labels e a coleta de metadados do CF dependem do Datadog Cluster
   Agent, que não existe no BTP. As tags vêm de `DD_TAGS` mais as que o buildpack tira do `VCAP_APPLICATION`
   (`application_name`, `space_name`, `instance_index`, `uri`, `container_id`).

@@ -38,4 +38,5 @@ cf app "$APP" >/dev/null 2>&1 || cf create-app "$APP" >/dev/null
 cf set-env "$APP" DD_API_KEY "$DD_API_KEY" >/dev/null
 echo "DD_API_KEY gravada no app (${#DD_API_KEY} caracteres)"
 
-cf push -f manifest.yml --var dd_site="$DD_SITE" --var dd_env="$DD_ENV"
+# O cf push mostra o diff do manifest contra o estado do app (que já tem a key): a saída passa por uma máscara.
+cf push -f manifest.yml --var dd_site="$DD_SITE" --var dd_env="$DD_ENV" 2>&1 | sed -e "s/${DD_API_KEY}/[DD_API_KEY]/g"
