@@ -1,0 +1,29 @@
+---
+# Sample CAP no BTP CF com os logs indo ao Datadog pelo buildpack oficial (supply), listado antes do nodejs_buildpack.
+# DD_API_KEY não fica aqui: scripts/deploy.sh grava com cf set-env (o cf push mantém as variáveis fora do manifest).
+# Vars (scripts/deploy.sh as passa a partir do .env): dd_site, dd_env.
+applications:
+  - name: datadog-backend-sample
+    random-route: true
+    memory: 512M
+    disk_quota: 1G
+    instances: 1
+    stack: cflinuxfs4
+    health-check-type: http
+    health-check-http-endpoint: /health
+    buildpacks:
+      - https://github.com/DataDog/datadog-cloudfoundry-buildpack/releases/download/4.48.1/datadog-cloudfoundry-buildpack-4.48.1.zip
+      - nodejs_buildpack
+    env:
+      NODE_ENV: production
+      DD_SITE: ((dd_site))
+      DD_ENV: ((dd_env))
+      DD_SERVICE: datadog-backend-sample
+      # O buildpack junta a estas as tags do CF (application_name, space_name, instance_index, uri, container_id).
+      DD_TAGS: env:((dd_env)),platform:sap-btp-cf
+      DD_LOGS_ENABLED: true
+      DD_ENABLE_CHECKS: false
+      DD_SPARSE_APP_LOGS: true
+      # stdout/stderr do app vão para a porta local do agente (e continuam no cf logs).
+      STD_LOG_COLLECTION_PORT: 10514
+      LOGS_CONFIG: '[{"type":"tcp","port":10514,"source":"nodejs","service":"datadog-backend-sample"}]'

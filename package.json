@@ -1,0 +1,42 @@
+{
+  "name": "lab2dev-datadog-backend-sample",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sample CAP no SAP BTP Cloud Foundry com os logs enviados ao Datadog pelo buildpack oficial",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^22"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "test": "node --test",
+    "deploy:trial": "bash scripts/deploy.sh",
+    "traffic": "bash scripts/traffic.sh",
+    "check:datadog": "node scripts/check-datadog.mjs"
+  },
+  "dependencies": {
+    "@cap-js/sqlite": "^3.1.2",
+    "@sap/cds": "^10.1.1"
+  },
+  "devDependencies": {
+    "@cap-js/cds-test": "^1.0.2",
+    "@sap/cds-dk": "^10.1.0"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": ":memory:"
+        }
+      },
+      "auth": "dummy"
+    },
+    "log": {
+      "levels": {
+        "catalog": "debug"
+      }
+    }
+  }
+}
