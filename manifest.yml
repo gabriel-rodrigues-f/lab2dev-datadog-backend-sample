@@ -5,8 +5,9 @@
 applications:
   - name: datadog-backend-sample
     random-route: true
-    memory: 512M
-    disk_quota: 1G
+    # Medido no trial (13/10): ~96 MB de memória e 315 MB de disco (droplet com Node + binários do agente).
+    memory: 256M
+    disk_quota: 512M
     instances: 1
     stack: cflinuxfs4
     health-check-type: http

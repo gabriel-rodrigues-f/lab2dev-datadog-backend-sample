@@ -38,6 +38,24 @@ Cada linha sai em JSON com `level`, `logger`, `msg`, `correlation_id` e os cabe�
 acrescenta `component_name`, `organization_name` e `space_name`. Os campos de negócio (`orderId`, `product`,
 `quantity`, `remainingStock`, `stock`) saem como atributos próprios, porque estão em `srv/log-fields.js`.
 
+**Log de acesso com o payload** (`srv/http-access-log.js`, logger `http`): uma linha por request, exceto o
+`/health`, no nível do status (5xx error, 4xx warn, o resto info):
+
+```json
+{"level":"info","logger":"http","msg":"POST /odata/v4/catalog/placeOrder 200",
+ "http":{"method":"POST","url":"/odata/v4/catalog/placeOrder","status_code":200},"duration":22522292,
+ "correlation_id":"213872a1-…","request_body":{"product":1,"quantity":2},
+ "response_body":{"@odata.context":"$metadata#CatalogService.OrderResult","orderId":"db7aee8d-…","remainingStock":18}}
+```
+
+`http.method`, `http.status_code` e `duration` (ns) são atributos padrão do Datadog. Os corpos JSON viram objetos
+(`@request_body.product`, `@response_body.remainingStock`), com chaves sensíveis mascaradas (`password`,
+`token`, `secret`, `apiKey`, `authorization`, `cookie` → `***`) e corte em 4 KB. `LOG_HTTP_PAYLOAD=false`
+desliga os corpos.
+
+No Datadog, Logs → `service:datadog-backend-sample @logger:http` mostra o tráfego. Clique numa linha e abra o
+`correlation_id` para ver as outras linhas do mesmo request (`catalog`, `odata`).
+
 ## Local
 
 ```sh
@@ -72,7 +90,9 @@ scripts/traffic.sh http://localhost:4004 1
 
 - **Buildpack de terceiro.** A SAP não dá suporte a ele; o zip é baixado do GitHub no staging (versão fixa no
   manifest, 4.48.1). Para cliente sem saída para o GitHub: `cf create-buildpack` com o zip, se o cliente permitir.
-- **Memória.** O agente divide o container com o app; 512 MB folgam para este sample.
+- **Memória e disco.** O agente divide o container com o app. No trial o conjunto usou ~96 MB de memória e
+  315 MB de disco (o droplet traz Node e os binários do agente): o manifest pede 256 MB e 512 MB. Disco abaixo de
+  ~350 MB não comporta o droplet e o app não sobe.
 - **Ruby 3.0 do `cflinuxfs4` (BTP).** Os scripts Ruby do buildpack não batem com ele em dois pontos:
   `DD_SPARSE_APP_LOGS` troca o `nc` pelo `scripts/nc.rb`, que quebra (`must be called with a block
   (ThreadError)`) e **nenhuma linha chega ao agente**: não use. E o `update_datadog_config.rb` falha com
@@ -85,6 +105,9 @@ scripts/traffic.sh http://localhost:4004 1
   não foi testado com este buildpack.
 - **Cabeçalhos nos logs.** O formatter JSON do CAP grava todos os cabeçalhos do request, inclusive
   `x_forwarded_for` e `x_cf_true_client_ip` (IP de quem chamou). Para tirar, use `cds.log.mask_headers`.
+- **Payload é dado do cliente.** Num produto, o corpo do request e da resposta pode ter dado pessoal ou de negócio:
+  a máscara por nome de chave não basta. Lá, ligue os corpos só por ambiente (`LOG_HTTP_PAYLOAD`) e combine a
+  retenção e o acesso no Datadog.
 - **Tags.** `DD_ENV`/`DD_SERVICE`/`DD_VERSION` com labels e a coleta de metadados do CF dependem do Datadog Cluster
   Agent, que não existe no BTP. As tags vêm de `DD_TAGS` mais as que o buildpack tira do `VCAP_APPLICATION`
   (`application_name`, `space_name`, `instance_index`, `uri`, `container_id`).
