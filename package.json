@@ -13,7 +13,8 @@
     "test": "node --test",
     "deploy:trial": "bash scripts/deploy.sh",
     "traffic": "bash scripts/traffic.sh",
-    "check:datadog": "node scripts/check-datadog.mjs"
+    "check:datadog": "node scripts/check-datadog.mjs",
+    "stress": "node scripts/stress.mjs"
   },
   "dependencies": {
     "@cap-js/sqlite": "^3.1.2",

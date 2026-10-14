@@ -12,6 +12,9 @@ service CatalogService {
   /** Baixa o estoque: info no sucesso, warn com estoque baixo, 409 sem estoque, 404 produto inexistente. */
   action placeOrder(product : Integer, quantity : Integer) returns OrderResult;
 
+  /** Repõe o estoque e devolve o novo saldo (o stress test usa para os pedidos não virarem só 409). */
+  action restock(product : Integer, quantity : Integer)    returns Integer;
+
   /** Escreve uma linha de log no nível pedido (debug, info, warn ou error). */
   action emitLog(level : String, message : String)        returns String;
 

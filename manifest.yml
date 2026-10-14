@@ -26,8 +26,9 @@ applications:
       DD_ENABLE_CHECKS: false
       # Saída do agente no cf logs, para diagnóstico (erros de envio, endpoint usado).
       SUPPRESS_DD_AGENT_OUTPUT: false
-      # stdout/stderr do app vão para a porta local do agente (e continuam no cf logs).
-      # Não use DD_SPARSE_APP_LOGS: ele troca o nc pelo scripts/nc.rb do buildpack, que quebra com o Ruby 3.0 do
-      # cflinuxfs4 do BTP ("must be called with a block (ThreadError)") e nenhuma linha chega ao agente.
-      STD_LOG_COLLECTION_PORT: 10514
+      # Só o log de rota vai ao Datadog: o app escreve cada linha direto na porta TCP do agente (LOGS_CONFIG).
+      # Sem STD_LOG_COLLECTION_PORT, o stdout (start do CAP, npm, buildpack) fica só no cf logs.
+      # Se um dia voltar a mandar o stdout: não use DD_SPARSE_APP_LOGS (o scripts/nc.rb do buildpack quebra com o
+      # Ruby 3.0 do cflinuxfs4 do BTP, "must be called with a block (ThreadError)", e nada chega ao agente).
+      ACCESS_LOG_TCP_PORT: 10514
       LOGS_CONFIG: '[{"type":"tcp","port":10514,"source":"nodejs","service":"datadog-backend-sample"}]'

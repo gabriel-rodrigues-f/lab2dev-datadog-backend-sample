@@ -27,6 +27,16 @@ module.exports = class CatalogService extends cds.ApplicationService {
       return { orderId, remainingStock }
     })
 
+    this.on('restock', async req => {
+      const { product, quantity } = req.data
+      if (!Number.isInteger(quantity) || quantity <= 0) return req.reject(400, 'quantity deve ser um inteiro maior que zero')
+      const updated = await UPDATE(Products, product).with({ stock: { '+=': quantity } })
+      if (!updated) return req.reject(404, `produto ${product} não existe`)
+      const { stock } = await SELECT.one.from(Products, product).columns('stock')
+      LOG.info('estoque reposto', { product, quantity, stock })
+      return stock
+    })
+
     this.on('emitLog', req => {
       const { level = 'info', message = 'log de teste' } = req.data
       if (!LEVELS.includes(level)) return req.reject(400, `level deve ser um destes: ${LEVELS.join(', ')}`)
